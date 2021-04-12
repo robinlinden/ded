@@ -1,8 +1,9 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, input, li, text, ul)
+import Html.Attributes exposing (placeholder, value)
+import Html.Events exposing (onClick, onInput)
 
 
 main : Program () Model Msg
@@ -11,33 +12,33 @@ main =
 
 
 type alias Model =
-    { count : Int }
+    { contacts : List String, contactInput : String }
 
 
 init : Model
 init =
-    { count = 0 }
+    { contacts = [], contactInput = "" }
 
 
 type Msg
-    = Increment
-    | Decrement
+    = ContactInputChange String
+    | AddContact
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Increment ->
-            { model | count = model.count + 1 }
+        ContactInputChange inputChange ->
+            { model | contactInput = inputChange }
 
-        Decrement ->
-            { model | count = model.count - 1 }
+        AddContact ->
+            { model | contacts = model.contacts ++ [ model.contactInput ], contactInput = "" }
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ button [ onClick Decrement ] [ text "-" ]
-        , div [] [ text (String.fromInt model.count) ]
-        , button [ onClick Increment ] [ text "+" ]
+        [ input [ placeholder "contact", value model.contactInput, onInput ContactInputChange ] []
+        , button [ onClick AddContact ] [ text "Add" ]
+        , ul [] (List.map (\l -> li [] [ text l ]) model.contacts)
         ]
