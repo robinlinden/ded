@@ -12,38 +12,52 @@ main =
 
 
 type alias Model =
-    { contacts : List String, contactInput : String, selectedContact : String }
+    { contacts : List String
+    , contactInput : String
+    , selectedContact : String
+    }
 
 
 init : Model
 init =
-    { contacts = [], contactInput = "", selectedContact = "" }
+    { contacts = []
+    , contactInput = ""
+    , selectedContact = ""
+    }
 
 
 type Msg
-    = ContactInputChange String
-    | AddContact
-    | SelectContact String
+    = ContactAdded
+    | ContactInputUpdated String
+    | ContactSelected String
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        ContactInputChange inputChange ->
-            { model | contactInput = inputChange }
+        ContactAdded ->
+            { model
+                | contacts = model.contacts ++ [ model.contactInput ]
+                , contactInput = ""
+            }
 
-        AddContact ->
-            { model | contacts = model.contacts ++ [ model.contactInput ], contactInput = "" }
+        ContactInputUpdated new ->
+            { model | contactInput = new }
 
-        SelectContact contact ->
+        ContactSelected contact ->
             { model | selectedContact = contact }
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ input [ placeholder "contact", value model.contactInput, onInput ContactInputChange ] []
-        , button [ onClick AddContact ] [ text "Add" ]
-        , ul [] (List.map (\l -> li [ onClick (SelectContact l) ] [ text l ]) model.contacts)
-        , p [] [ text ("Selected contact: " ++ model.selectedContact) ]
+        [ input
+            [ placeholder "contact"
+            , value model.contactInput
+            , onInput ContactInputUpdated
+            ]
+            []
+        , button [ onClick ContactAdded ] [ text "add" ]
+        , ul [] (List.map (\l -> li [ onClick (ContactSelected l) ] [ text l ]) model.contacts)
+        , p [] [ text ("selected contact: " ++ model.selectedContact) ]
         ]
