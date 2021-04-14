@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, button, div, input, li, p, text, ul)
-import Html.Attributes exposing (placeholder, value)
+import Html.Attributes exposing (disabled, placeholder, value)
 import Html.Events exposing (onClick, onInput)
 
 
@@ -57,7 +57,11 @@ view model =
             , onInput ContactInputUpdated
             ]
             []
-        , button [ onClick ContactAdded ] [ text "add" ]
+        , button
+            [ disabled (String.isEmpty model.contactInput)
+            , onClick ContactAdded
+            ]
+            [ text "add" ]
         , ul [] (List.map (\l -> li [ onClick (ContactSelected l) ] [ text l ]) model.contacts)
         , p [] [ text ("selected contact: " ++ model.selectedContact) ]
         ]
