@@ -1,16 +1,21 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Html exposing (Html, button, div, input, li, p, text, ul)
 import Html.Attributes exposing (disabled, placeholder, value)
 import Html.Events exposing (onClick, onInput)
+import Json.Decode as D
+import Json.Encode as E
 
 
-main : Program () Model Msg
+port updateStorage : E.Value -> Cmd msg
+
+
+main : Program E.Value Model Msg
 main =
     Browser.element
         { init = init
-        , update = update
+        , update = updateAndStore
         , subscriptions = subscriptions
         , view = view
         }
@@ -25,16 +30,52 @@ type alias Model =
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { contacts = []
-      , contactInput = ""
-      , selectedContact = ""
-      , messages = []
-      , messageInput = ""
-      }
+init : E.Value -> ( Model, Cmd Msg )
+init flags =
+    ( case D.decodeValue decoder flags of
+        Ok model ->
+            model
+
+        Err e ->
+            { contacts = []
+            , contactInput = ""
+            , selectedContact = ""
+            , messages = []
+            , messageInput = ""
+            }
     , Cmd.none
     )
+
+
+encode : Model -> E.Value
+encode model =
+    E.object
+        [ ( "contacts", E.list E.string model.contacts )
+        , ( "contactInput", E.string model.contactInput )
+        , ( "selectedContact", E.string model.selectedContact )
+        , ( "messages", E.list (tuple2Encoder E.string E.string) model.messages )
+        , ( "messageInput", E.string model.messageInput )
+        ]
+
+
+tuple2Encoder : (a -> E.Value) -> (b -> E.Value) -> ( a, b ) -> E.Value
+tuple2Encoder aEnc bEnc ( a, b ) =
+    E.list identity [ aEnc a, bEnc b ]
+
+
+decoder : D.Decoder Model
+decoder =
+    D.map5 Model
+        (D.field "contacts" (D.list D.string))
+        (D.field "contactInput" D.string)
+        (D.field "selectedContact" D.string)
+        (D.field "messages" (D.list (tuple2Decoder D.string D.string)))
+        (D.field "messageInput" D.string)
+
+
+tuple2Decoder : D.Decoder a -> D.Decoder b -> D.Decoder ( a, b )
+tuple2Decoder a b =
+    D.index 0 a |> D.andThen (\aVal -> D.index 1 b |> D.andThen (\bVal -> D.succeed ( aVal, bVal )))
 
 
 type Msg
@@ -43,6 +84,17 @@ type Msg
     | ContactSelected String
     | MessageInputUpdated String
     | MessageSent
+
+
+updateAndStore : Msg -> Model -> ( Model, Cmd Msg )
+updateAndStore msg oldModel =
+    let
+        ( newModel, cmds ) =
+            update msg oldModel
+    in
+    ( newModel
+    , Cmd.batch [ updateStorage (encode newModel), cmds ]
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

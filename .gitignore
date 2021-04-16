@@ -1,1 +1,5 @@
+# Elm compiler bonuses.
 /elm-stuff
+
+# Our generated files.
+/ded.js

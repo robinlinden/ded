@@ -12,8 +12,16 @@
 </body>
 
 <script type="text/javascript">
+    var storedData = localStorage.getItem('ded-model');
+    var flags = storedData ? JSON.parse(storedData) : null;
+
     var app = Elm.Main.init({
-        node: document.querySelector('main')
+        node: document.querySelector('main'),
+        flags: flags
+    });
+
+    app.ports.updateStorage.subscribe(function (state) {
+        localStorage.setItem('ded-model', JSON.stringify(state));
     });
 </script>
 
